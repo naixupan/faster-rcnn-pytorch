@@ -155,6 +155,9 @@ class RegionProposalNetwork(nn.Module):
         #   分类预测先验框内部是否包含物体
         #-----------------------------------------#
         rpn_scores = self.score(x)
+        # permute：进行维度变换操作（改变张量维度顺序，将通道维度移到最后一层）
+        # contiguous：确保张量在内存中时连续存储的
+        # view：重塑张量形状
         rpn_scores = rpn_scores.permute(0, 2, 3, 1).contiguous().view(n, -1, 2)
         
         #--------------------------------------------------------------------------------------#
@@ -182,7 +185,14 @@ class RegionProposalNetwork(nn.Module):
         anchor      = torch.from_numpy(anchor).unsqueeze(0).float().to(x.device)
         
         return rpn_locs, rpn_scores, rois, roi_indices, anchor
-
+    
+#------------------------------------------------------#
+# 用于神经网络权重初始化
+# m：Pytorch模块
+# mean：正态分布的均值；stddev：正态分布的标准差
+# truncated：是否使用截断正态分布
+# 使用截断正态分布可以防止极端值，使训练更稳定
+#------------------------------------------------------#
 def normal_init(m, mean, stddev, truncated=False):
     if truncated:
         m.weight.data.normal_().fmod_(2).mul_(stddev).add_(mean)  # not a perfect approximation
